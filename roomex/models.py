@@ -74,6 +74,12 @@ class Reserva:
 
         self.pagamentos: List['Pagamento'] = []
         self.adicionais: List['Adicional'] = []
+    
+    def adicionar_pagamento(self, valor: float, forma: str, data_pagamento: date):
+        novo_pagamento = Pagamento(data_pagamento, forma, valor)
+
+        self.pagamentos.append(novo_pagamento)
+        print(f"Pagamento de R$ {valor:.2f} ({forma}) registrado com sucesso.")
 
     @property
     def num_hospedes(self) -> int:
@@ -126,7 +132,6 @@ class Pagamento:
         self.data = data
         self.forma = forma
         self.valor = valor
-
 
 class Adicional:
     """Representa um registro financeiro de débito (consumo/serviço extra) na reserva."""
