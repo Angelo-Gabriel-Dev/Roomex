@@ -122,4 +122,14 @@ class Reserva:
 
 class Pagamento:
     """Representa um registro financeiro de crédito (pagamento) na reserva."""
-    def __init__(self, data: date, forma: str, valor:
+    def __init__(self, data: date, forma: str, valor: float):
+        self.data = data
+        self.forma = forma
+        self.valor = valor
+
+
+class Adicional:
+    """Representa um registro financeiro de débito (consumo/serviço extra) na reserva."""
+    def __init__(self, descricao: str, valor: float):
+        self.descricao = descricao
+        self.valor = valor
