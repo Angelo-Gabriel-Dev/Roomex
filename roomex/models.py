@@ -18,7 +18,23 @@ class Hospede(Pessoa):
     def __init__(self, nome: str, documento: str, email: str, telefone: str):
         super().__init__(nome, documento, email, telefone)
         self.historico_reservas: List['Reserva'] = []
+    
+    def to_dict(self):
+        return {
+            "nome": self.nome,
+            "documento": self.documento,
+            "email": self.email,
+            "telefone": self.telefone
+        }
 
+    @classmethod
+    def from_dict(cls, dados):
+        return cls(
+            nome=dados["nome"],
+            documento=dados["documento"],
+            email=dados["email"],
+            telefone=dados["telefone"]
+        )
 
 class Quarto:
     """Representa um quarto físico do hotel com suas características e tarifa."""
@@ -55,7 +71,26 @@ class Quarto:
 
     def __lt__(self, other: 'Quarto') -> bool:
         return self.numero < other.numero
+    
+    def to_dict(self):
+        return {
+            "numero": self.numero,
+            "tipo": self.tipo,
+            "capacidade": self.capacidade,
+            "tarifa_base": self.tarifa_base,
+            "status": self.status
+        }
 
+    @classmethod
+    def from_dict(cls, dados):
+        quarto = cls(
+            numero=dados["numero"],
+            tipo=dados["tipo"],
+            capacidade=dados["capacidade"],
+            tarifa_base=dados["tarifa_base"]
+        )
+        quarto.status = dados["status"]
+        return quarto
 
 class Reserva:
     """Representa uma reserva de um quarto feita por um hóspede para um período."""
@@ -80,6 +115,11 @@ class Reserva:
 
         self.pagamentos.append(novo_pagamento)
         print(f"Pagamento de R$ {valor:.2f} ({forma}) registrado com sucesso.")
+    
+    def lancar_adicional(self, descricao: str, valor: float):
+        novo_adicional = Adicional(descricao, valor)
+        self.adicionais.append(novo_adicional)
+        print(f"Adicional '{descricao}' de R$ {valor:.2f} lançado com sucesso.")
 
     @property
     def num_hospedes(self) -> int:
@@ -124,7 +164,45 @@ class Reserva:
 
     def __str__(self) -> str:
         return f"Reserva no {self.quarto.numero} para {self.hospede.nome} ({self.__len__()} noites)"
+    
+    def to_dict(self):
+        return {
+            "hospede": self.hospede.to_dict(), # Chama o to_dict do Hospede
+            "quarto_numero": self.quarto.numero, # Salvamos só o número do quarto para buscar depois
+            "num_hospedes": self.num_hospedes,
+            "origem": self.origem,
+            "data_entrada": self.data_entrada.isoformat(),
+            "data_saida": self.data_saida.isoformat(),
+            "status": self.status,
+            "pagamentos": [p.to_dict() for p in self.pagamentos], # Lista de dicts
+            "adicionais": [a.to_dict() for a in self.adicionais]  # Lista de dicts
+        }
 
+    @classmethod
+    def from_dict(cls, dados, lista_quartos):
+        # Para recriar a reserva, precisamos achar o objeto Quarto real na lista de quartos do sistema
+        quarto_real = next((q for q in lista_quartos if q.numero == dados["quarto_numero"]), None)
+        
+        if not quarto_real:
+            raise ValueError(f"Quarto {dados['quarto_numero']} não encontrado.")
+
+        hospede = Hospede.from_dict(dados["hospede"])
+        
+        reserva = cls(
+            hospede=hospede,
+            quarto=quarto_real,
+            num_hospedes=dados["num_hospedes"],
+            origem=dados["origem"],
+            data_entrada=date.fromisoformat(dados["data_entrada"]),
+            data_saida=date.fromisoformat(dados["data_saida"])
+        )
+        reserva.status = dados["status"]
+        
+        # Recria as listas de pagamentos e adicionais
+        reserva.pagamentos = [Pagamento.from_dict(p) for p in dados["pagamentos"]]
+        reserva.adicionais = [Adicional.from_dict(a) for a in dados["adicionais"]]
+        
+        return reserva
 
 class Pagamento:
     """Representa um registro financeiro de crédito (pagamento) na reserva."""
@@ -133,8 +211,36 @@ class Pagamento:
         self.forma = forma
         self.valor = valor
 
+    def to_dict(self) -> dict:
+        return {
+            "data": self.data.isoformat(),
+            "forma": self.forma,
+            "valor": self.valor
+        }
+    
+    @classmethod
+    def from_dict(cls, data: dict) -> 'Pagamento':
+        return cls(
+            data=date.fromisoformat(data["data"]),
+            forma=data["forma"],
+            valor=data["valor"]
+        )
+
 class Adicional:
     """Representa um registro financeiro de débito (consumo/serviço extra) na reserva."""
     def __init__(self, descricao: str, valor: float):
         self.descricao = descricao
         self.valor = valor
+    
+    def to_dict(self) -> dict:
+        return {
+            "descricao": self.descricao,
+            "valor": self.valor
+        }
+    
+    @classmethod
+    def from_dict(cls, data: dict) -> 'Adicional':
+        return cls(
+            descricao=data["descricao"],
+            valor=data["valor"]
+        )
