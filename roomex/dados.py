@@ -40,3 +40,20 @@ def carregar_dados(nome_arquivo: str, classe_tipo: Type, lista_quartos: List = N
         objetos.append(obj)
         
     return objetos
+
+def carregar_configuracoes() -> dict:
+    """
+    Lê o arquivo settings.json da raiz do projeto.
+    """
+    caminho_config = "settings.json"
+    
+    # Se o arquivo não existir, retorna uma configuração padrão de segurança
+    if not os.path.exists(caminho_config):
+        return {"multiplicador_fim_de_semana": 1.0, "temporadas": []}
+
+    try:
+        with open(caminho_config, "r", encoding="utf-8") as arquivo:
+            return json.load(arquivo)
+    except Exception as e:
+        print(f"Erro ao ler configurações: {e}")
+        return {"multiplicador_fim_de_semana": 1.0, "temporadas": []}

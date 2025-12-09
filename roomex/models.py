@@ -1,5 +1,7 @@
 from datetime import date
 from typing import List, Optional
+from datetime import date, timedelta
+from roomex.dados import carregar_configuracoes
 
 class Pessoa:
     """Classe base que representa uma pessoa no sistema (Hóspede, Funcionário, etc.)."""
@@ -164,6 +166,124 @@ class Reserva:
 
     def __str__(self) -> str:
         return f"Reserva no {self.quarto.numero} para {self.hospede.nome} ({self.__len__()} noites)"
+    
+    def calcular_valor_total(self) -> float:
+        """
+        Calcula o valor total da reserva considerando:
+        - Tarifa base do quarto
+        - Multiplicador de fim de semana
+        - Multiplicador de temporada (settings.json)
+        - Itens adicionais (frigobar/serviços)
+        """
+        config = carregar_configuracoes()
+        total_diarias = 0.0
+        
+        # Percorre cada dia da reserva para calcular o preço individualmente
+        dias_totais = (self.data_saida - self.data_entrada).days
+        
+        for i in range(dias_totais):
+            dia_atual = self.data_entrada + timedelta(days=i)
+            fator_preco = 1.0
+            
+            # 1. Verifica Fim de Semana (Sexta=4, Sábado=5, Domingo=6)
+            # Vamos considerar Sexta e Sábado como noites de FDS, ou Sáb e Dom.
+            # O padrão hotelaria costuma ser Sex/Sab ou Sab/Dom. Vamos usar Sab(5) e Dom(6).
+            if dia_atual.weekday() >= 5: 
+                fator_preco *= config.get("multiplicador_fim_de_semana", 1.0)
+
+            # 2. Verifica Temporadas
+            dia_str = dia_atual.strftime("%m-%d") # Ex: "12-25"
+            # Precisamos inverter para comparar (Mês-Dia no JSON vs data)
+            # O JSON está "DD-MM", o python date usa YYYY-MM-DD.
+            # Vamos padronizar convertendo a data atual para "DD-MM"
+            dia_formatado = dia_atual.strftime("%d-%m")
+
+            for temporada in config.get("temporadas", []):
+                inicio = temporada["inicio"]
+                fim = temporada["fim"]
+                
+                # Lógica simplificada para intervalo de datas (assumindo mesmo ano)
+                # Se o dia atual está entre inicio e fim
+                if self._data_dentro_periodo(dia_formatado, inicio, fim):
+                    fator_preco *= temporada["multiplicador"]
+                    # Aplica apenas a primeira temporada que encontrar (não acumula temporadas)
+                    break 
+
+            # Soma o valor do dia
+            valor_dia = self.quarto.tarifa_base * fator_preco
+            total_diarias += valor_dia
+
+        # 3. Soma Adicionais
+        total_adicionais = sum(a.valor for a in self.adicionais)
+
+        return round(total_diarias + total_adicionais, 2)
+    
+    def realizar_checkin(self):
+        """
+        Confirma a entrada do hóspede e muda status para ATIVA.
+        """
+        if self.status != "PENDENTE":
+            raise ValueError(f"Não é possível fazer check-in. Status atual: {self.status}")
+        
+        # Aqui poderíamos validar se a data de hoje é igual a data_entrada,
+        # mas para facilitar os testes, vamos apenas mudar o status.
+        self.status = "ATIVA"
+        print(f"✅ Check-in realizado para {self.hospede.nome}. Quarto {self.quarto.numero}.")
+
+    def realizar_checkout(self):
+        """
+        Calcula conta, verifica pagamentos e finaliza a reserva.
+        """
+        if self.status != "ATIVA":
+            raise ValueError(f"Apenas reservas ATIVAS podem fazer check-out. Status: {self.status}")
+
+        total_devido = self.calcular_valor_total()
+        total_pago = sum(p.valor for p in self.pagamentos)
+
+        # Pequena margem de erro para pontos flutuantes (centavos)
+        if total_pago < (total_devido - 0.01):
+            falta = total_devido - total_pago
+            raise ValueError(f"Pagamento pendente! Total: R$ {total_devido:.2f}. Falta: R$ {falta:.2f}")
+
+        self.status = "FINALIZADA"
+        print(f"🏁 Check-out concluído! Total pago: R$ {total_pago:.2f}.")
+
+    def cancelar_reserva(self):
+        """
+        Cancela a reserva. Se estiver muito próximo da data, aplica multa.
+        """
+        if self.status not in ["PENDENTE", "CONFIRMADA"]:
+            raise ValueError("Não é possível cancelar essa reserva.")
+
+        config = carregar_configuracoes()
+        multa = config.get("multa_cancelamento", 0.0)
+
+        # Regra de Multa: Simplesmente aplica se configurado (pode ser refinado por data depois)
+        # Vamos lançar a multa como um Adicional se houver valor
+        if multa > 0:
+            self.lancar_adicional("Multa de Cancelamento", multa)
+            print(f"⚠️ Reserva cancelada com multa de R$ {multa:.2f}.")
+        else:
+            print("Reserva cancelada sem custos.")
+
+        self.status = "CANCELADA"
+
+    def _data_dentro_periodo(self, data_atual: str, inicio: str, fim: str) -> bool:
+        """Helper para comparar datas no formato 'DD-MM'."""
+        # Truque: converter para números inteiros MM-DD para comparar (ex: 01-05 vira 105)
+        def converter(d):
+            dia, mes = map(int, d.split('-'))
+            return mes * 100 + dia
+        
+        d_atual = converter(data_atual)
+        d_inicio = converter(inicio)
+        d_fim = converter(fim)
+
+        if d_inicio <= d_fim:
+            return d_inicio <= d_atual <= d_fim
+        else:
+            # Caso especial: temporada vira o ano (ex: Dez a Jan)
+            return d_atual >= d_inicio or d_atual <= d_fim
     
     def to_dict(self):
         return {
