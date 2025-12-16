@@ -1,0 +1,24 @@
+[
+    {
+        "hospede": {
+            "nome": "a",
+            "documento": "123",
+            "email": "gmail",
+            "telefone": "120"
+        },
+        "quarto_numero": 101,
+        "num_hospedes": 1,
+        "origem": "Balcão",
+        "data_entrada": "2025-12-10",
+        "data_saida": "2025-12-11",
+        "status": "FINALIZADA",
+        "pagamentos": [
+            {
+                "data": "2025-12-09",
+                "forma": "Dinheiro",
+                "valor": 100.0
+            }
+        ],
+        "adicionais": []
+    }
+]

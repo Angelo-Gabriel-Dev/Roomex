@@ -1,0 +1,58 @@
+[
+    {
+        "numero": 101,
+        "tipo": "SIMPLES",
+        "capacidade": 1,
+        "tarifa_base": 100.0,
+        "status": "DISPONIVEL"
+    },
+    {
+        "numero": 102,
+        "tipo": "SIMPLES",
+        "capacidade": 1,
+        "tarifa_base": 100.0,
+        "status": "DISPONIVEL"
+    },
+    {
+        "numero": 103,
+        "tipo": "SIMPLES",
+        "capacidade": 2,
+        "tarifa_base": 120.0,
+        "status": "DISPONIVEL"
+    },
+    {
+        "numero": 201,
+        "tipo": "DUPLO",
+        "capacidade": 2,
+        "tarifa_base": 180.0,
+        "status": "DISPONIVEL"
+    },
+    {
+        "numero": 202,
+        "tipo": "DUPLO",
+        "capacidade": 2,
+        "tarifa_base": 180.0,
+        "status": "DISPONIVEL"
+    },
+    {
+        "numero": 203,
+        "tipo": "DUPLO",
+        "capacidade": 3,
+        "tarifa_base": 200.0,
+        "status": "DISPONIVEL"
+    },
+    {
+        "numero": 301,
+        "tipo": "LUXO",
+        "capacidade": 4,
+        "tarifa_base": 450.0,
+        "status": "DISPONIVEL"
+    },
+    {
+        "numero": 302,
+        "tipo": "LUXO",
+        "capacidade": 4,
+        "tarifa_base": 450.0,
+        "status": "DISPONIVEL"
+    }
+]

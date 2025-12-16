@@ -1,0 +1,25 @@
+{
+    "hotel_nome": "Roomex Hotel",
+    "multiplicador_fim_de_semana": 1.20,
+    "multa_cancelamento": 150.00,
+    "temporadas": [
+        {
+            "nome": "Alta Temporada (Jan)",
+            "inicio": "01-01",
+            "fim": "31-01",
+            "multiplicador": 1.50
+        },
+        {
+            "nome": "Carnaval (Fev)",
+            "inicio": "10-02",
+            "fim": "20-02",
+            "multiplicador": 2.00
+        },
+        {
+            "nome": "Julho (Ferias)",
+            "inicio": "01-07",
+            "fim": "31-07",
+            "multiplicador": 1.30
+        }
+    ]
+}
