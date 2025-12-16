@@ -6,7 +6,7 @@ from typing import List
 # Importando nossos módulos
 from roomex.models import Quarto, Hospede, Reserva
 from roomex.dados import carregar_dados, salvar_dados
-from roomex.reports import calcular_taxa_ocupacao
+from roomex.reports import calcular_metricas_financeiras, relatorio_cancelamentos
 
 # --- Variáveis Globais (Estado do Sistema) ---
 quartos: List[Quarto] = []
@@ -146,13 +146,31 @@ def realizar_acoes_reserva(tipo_acao):
         print(f"❌ Erro: {e}")
 
 def menu_relatorios():
-    print("\n--- 📊 Relatórios ---")
+    print("\n--- 📊 Relatórios Consolidados (Final) ---")
     dt_ini = ler_data("Data Início")
     dt_fim = ler_data("Data Fim")
     
-    taxa = calcular_taxa_ocupacao(reservas, dt_ini, dt_fim, total_quartos=len(quartos))
-    print(f"\nTaxa de Ocupação no período: {taxa}%")
-    input("Pressione Enter para voltar...")
+    # 1. Métricas Financeiras
+    metricas = calcular_metricas_financeiras(reservas, dt_ini, dt_fim, total_quartos=len(quartos))
+    
+    print("\n" + "-"*30)
+    print("📈 DESEMPENHO FINANCEIRO")
+    print("-"*30)
+    print(f"Taxa de Ocupação:   {metricas['ocupacao']}%")
+    print(f"Receita do Período: R$ {metricas['receita_total']:.2f}")
+    print(f"ADR (Diária Média): R$ {metricas['adr']:.2f}")
+    print(f"RevPAR:             R$ {metricas['revpar']:.2f}")
+
+    # 2. Cancelamentos
+    canc = relatorio_cancelamentos(reservas, dt_ini, dt_fim)
+    print("\n" + "-"*30)
+    print("🚫 CANCELAMENTOS E PERDAS")
+    print("-"*30)
+    print(f"Cancelados: {canc['CANCELADA']}")
+    print(f"No-Show:    {canc['NO_SHOW']}")
+    print(f"Total:      {canc['TOTAL']}")
+    
+    input("\nPressione Enter para voltar...")
 
 # --- Inicialização ---
 
